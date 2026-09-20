@@ -29,6 +29,10 @@ export async function adminApi(request:Request,env:Env){
  }
  if(request.method==='PATCH'){
   const data=await request.json() as Record<string,unknown>;
+  if(typeof data.reviewed==='boolean'){
+   const result=await env.DB.prepare('UPDATE questions SET reviewed_at=? WHERE id=? AND deleted_at IS NULL').bind(data.reviewed?Date.now():null,id).run();
+   return result.meta.changes?json({ok:true}):json({error:'질문을 찾을 수 없습니다.'},404);
+  }
   const passage=typeof data.passage==='string'?data.passage.trim():'',content=typeof data.content==='string'?data.content.trim():'',name=typeof data.name==='string'?data.name.trim()||'익명':'익명';
   if(!passage||passage.length>80||content.length<5||content.length>2000||name.length>30)return json({error:'본문과 질문 길이를 확인해주세요.'},400);
   const result=await env.DB.prepare("UPDATE questions SET passage=?,content=?,name=?,summary=NULL,summary_status='unavailable' WHERE id=? AND deleted_at IS NULL").bind(passage,content,name,id).run();

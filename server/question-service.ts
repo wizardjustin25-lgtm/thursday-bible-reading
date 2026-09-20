@@ -1,6 +1,6 @@
 export type QuestionEnv = { DB: D1Database; OPENAI_API_KEY?: string; OPENAI_MODEL?: string; RATE_LIMIT_SALT?: string; ALLOWED_ORIGIN?: string };
 type Row = { id: string; passage: string; content: string; name: string; summary: string|null; summaryStatus: string; createdAt: number };
-const columns = "id, passage, content, name, summary, summary_status AS summaryStatus, created_at AS createdAt";
+const columns = "reviewed_at AS reviewedAt, id, passage, content, name, summary, summary_status AS summaryStatus, created_at AS createdAt";
 const json = (body: unknown, status=200) => Response.json(body,{status,headers:{"Cache-Control":"no-store"}});
 
 async function readBody(request: Request): Promise<Record<string,unknown>> {
@@ -45,7 +45,7 @@ async function summarize(question:Row,env:QuestionEnv){
 export async function questionsApi(request:Request,env:QuestionEnv,ctx?:{waitUntil(promise:Promise<unknown>):void}){
   try {
     if(request.method==="GET"){
-      const {results}=await env.DB.prepare(`SELECT ${columns} FROM questions WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`).all<Row>();
+      const {results}=await env.DB.prepare(`SELECT ${columns} FROM questions WHERE deleted_at IS NULL ORDER BY created_at DESC, id DESC`).all<Row>();
       return json({questions:results,aiEnabled:Boolean(env.OPENAI_API_KEY),demo:false});
     }
     if(request.method!=="POST")return json({error:"지원하지 않는 요청입니다."},405);

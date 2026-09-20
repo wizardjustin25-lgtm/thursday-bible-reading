@@ -42,6 +42,11 @@ const login=await (await adminApi(adminReq('login','POST',{password}),adminEnv))
 assert.equal((await adminApi(adminReq('questions/'+body.id,'PATCH',{...body,content:'管理者が変更した質問です。'},login.token+'tamper'),adminEnv)).status,401);
 assert.equal((await adminApi(adminReq('questions/'+body.id,'PATCH',{...body,content:'수정된 질문 내용은 무엇인가요?'},login.token),adminEnv)).status,200);
 assert.equal(sql.prepare('SELECT summary FROM questions WHERE id=?').get(body.id).summary,null);
+assert.equal((await adminApi(adminReq('questions/'+body.id,'PATCH',{reviewed:true}),adminEnv)).status,401);
+assert.equal((await adminApi(adminReq('questions/'+body.id,'PATCH',{reviewed:true},login.token),adminEnv)).status,200);
+let reviewed=await (await questionsApi(new Request('https://api.example.com/api/questions'),env)).json();assert(reviewed.questions.find(q=>q.id===body.id).reviewedAt);
+assert.equal((await adminApi(adminReq('questions/'+body.id,'PATCH',{reviewed:false},login.token),adminEnv)).status,200);
+reviewed=await (await questionsApi(new Request('https://api.example.com/api/questions'),env)).json();assert.equal(reviewed.questions.find(q=>q.id===body.id).reviewedAt,null);
 assert.equal((await adminApi(adminReq('questions/'+body.id,'DELETE',null,login.token),adminEnv)).status,200);
 const visible=await (await questionsApi(new Request('https://api.example.com/api/questions'),env)).json();assert(!visible.questions.some(q=>q.id===body.id));
 assert(sql.prepare('SELECT deleted_at FROM questions WHERE id=?').get(body.id).deleted_at);
