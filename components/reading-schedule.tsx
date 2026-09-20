@@ -8,6 +8,8 @@ export default function ReadingSchedule(){
   useEffect(()=>{const refresh=()=>setToday(koreaDate());refresh();const timer=setInterval(refresh,60_000);return()=>clearInterval(timer);},[]);
   const todayIndex=schedule.findIndex(day=>day.date===today);
   const before=!today||today<schedule[0].date;
+  const progressDays=before?0:todayIndex>=0?todayIndex+1:schedule.length;
+  const progressPercent=Math.round(progressDays/schedule.length*100);
   const current=schedule[todayIndex>=0?todayIndex:before?0:schedule.length-1];
   const weekIndex=Math.floor((current.day-1)/7);
   const week=weeks[weekIndex];
@@ -19,6 +21,11 @@ export default function ReadingSchedule(){
       <div className="reading-rule"/>
       <div className="reading-info"><div><CalendarDays size={19}/><span>{todayIndex>=0?"이번 주 진도":"주간 진도"} · {weekIndex+1}주차</span></div><p className="week-passage">{weekPassage}</p><span className="week-dates">{formatDay(week[0].date)} – {formatDay(week.at(-1)!.date)}</span></div>
       <BookOpen className="reading-book" size={116} strokeWidth={.8}/>
+    </section>
+    <section className="reading-progress" aria-label="날짜 기준 통독 진도">
+      <div className="progress-heading"><strong>우리의 통독 여정</strong><span>{today?`${progressDays} / ${schedule.length}일`:"날짜 확인 중"}<b>{today?`${progressPercent}%`:"—"}</b></span></div>
+      <progress max={schedule.length} value={progressDays} aria-label="오늘까지의 일정 진도" aria-valuetext={`${progressDays}일 / ${schedule.length}일, ${progressPercent}%`}/>
+      <p>오늘까지의 일정 기준 · 개인의 읽기 완료 기록은 아닙니다.</p>
     </section>
     <details className="schedule-all"><summary><span><CalendarDays size={18}/><strong>신약 65일 통독 일정</strong><span className="schedule-period">2026. 9. 10. – 11. 13.</span></span><span className="schedule-toggle">전체 일정<ChevronDown size={18}/></span></summary>
       <div className="schedule-content"><p className="schedule-intro">마태복음부터 요한계시록까지, 신약 27권 260장을 매일 4장씩 읽습니다. 주말에도 이어서 읽으며, 책이 끝나면 다음 책으로 넘어갑니다.</p>
