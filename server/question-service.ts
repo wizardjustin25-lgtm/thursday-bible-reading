@@ -36,7 +36,7 @@ async function summarize(question:Row,env:QuestionEnv){
     const data=await response.json() as {status?:string;output?:{type:string;content?:{type:string;text?:string}[]}[]};
     const summary=data.output?.filter(x=>x.type==="message").flatMap(x=>x.content||[]).filter(x=>x.type==="output_text").map(x=>x.text||"").join(" ").trim();
     if(data.status!=="completed"||!summary||summary.length>180)throw new Error("Invalid summary");
-    await env.DB.prepare("UPDATE questions SET summary = ?, summary_status = 'ready' WHERE id = ?").bind(summary,question.id).run();
+    await env.DB.prepare("UPDATE questions SET summary = ?, summary_status = 'ready' WHERE id = ? AND content = ? AND passage = ? AND summary_status = 'pending'").bind(summary,question.id,question.content,question.passage).run();
   } catch {
     await env.DB.prepare("UPDATE questions SET summary_status = 'failed' WHERE id = ?").bind(question.id).run();
   }
@@ -45,7 +45,7 @@ async function summarize(question:Row,env:QuestionEnv){
 export async function questionsApi(request:Request,env:QuestionEnv,ctx?:{waitUntil(promise:Promise<unknown>):void}){
   try {
     if(request.method==="GET"){
-      const {results}=await env.DB.prepare(`SELECT ${columns} FROM questions ORDER BY created_at DESC LIMIT 100`).all<Row>();
+      const {results}=await env.DB.prepare(`SELECT ${columns} FROM questions WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`).all<Row>();
       return json({questions:results,aiEnabled:Boolean(env.OPENAI_API_KEY),demo:false});
     }
     if(request.method!=="POST")return json({error:"지원하지 않는 요청입니다."},405);

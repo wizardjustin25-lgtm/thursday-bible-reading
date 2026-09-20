@@ -17,7 +17,7 @@ export default function ReadingSchedule(){
     <section className="reading" aria-label="신약성경 통독 일정">
       <div className="reading-heading"><span className="overline">{todayIndex>=0?"오늘 함께 읽을 말씀":before?"첫날 함께 읽을 말씀":"마지막 날 읽을 말씀"}<span className="sample-tag">{current.day}일차 / 65일</span></span><h2>{current.passage}</h2><p>{formatDay(current.date)} · 하루 4장</p></div>
       <div className="reading-rule"/>
-      <div className="reading-info"><div><CalendarDays size={19}/><span>{todayIndex>=0?"이번 주 진도":"주간 진도"} · {weekIndex+1}주차</span></div><p className="week-passage">{weekPassage}</p><span className="week-dates">{formatDay(week[0].date)} – {formatDay(week.at(-1)!.date)}<br/>목요일부터 수요일까지 함께 읽습니다.</span></div>
+      <div className="reading-info"><div><CalendarDays size={19}/><span>{todayIndex>=0?"이번 주 진도":"주간 진도"} · {weekIndex+1}주차</span></div><p className="week-passage">{weekPassage}</p><span className="week-dates">{formatDay(week[0].date)} – {formatDay(week.at(-1)!.date)}</span></div>
       <BookOpen className="reading-book" size={116} strokeWidth={.8}/>
     </section>
     <details className="schedule-all"><summary><span><CalendarDays size={18}/><strong>신약 65일 통독 일정</strong><span className="schedule-period">2026. 9. 10. – 11. 13.</span></span><span className="schedule-toggle">전체 일정<ChevronDown size={18}/></span></summary>
