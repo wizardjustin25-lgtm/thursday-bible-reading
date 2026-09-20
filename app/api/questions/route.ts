@@ -1,10 +1,8 @@
-import { questionsDb } from "../../../lib/questions-db";
-export async function GET(){try{const {results}=await questionsDb().prepare("SELECT id, passage, content, name, summary, created_at AS createdAt FROM questions ORDER BY created_at DESC LIMIT 100").all();return Response.json({questions:results},{headers:{"Cache-Control":"no-store"}});}catch(error){console.error("Question list unavailable",error);return Response.json({error:"질문을 불러오지 못했습니다."},{status:503});}}
-export async function POST(request:Request){
- if(request.headers.get("origin")&&request.headers.get("origin")!==new URL(request.url).origin)return Response.json({error:"요청을 확인할 수 없습니다."},{status:403});
- let raw:string;try{const reader=request.body?.getReader();if(!reader)throw new Error();const chunks:Uint8Array[]=[];let length=0;while(true){const {value,done}=await reader.read();if(done)break;length+=value.byteLength;if(length>16000){await reader.cancel();return Response.json({error:"질문은 2,000자 이내로 작성해주세요."},{status:413});}chunks.push(value);}const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}raw=new TextDecoder().decode(bytes);}catch{return Response.json({error:"질문 내용을 확인해주세요."},{status:400});}
- let data;try{data=JSON.parse(raw);}catch{return Response.json({error:"질문 내용을 확인해주세요."},{status:400});}if(!data||typeof data!=="object")return Response.json({error:"질문 내용을 확인해주세요."},{status:400});
- const passage=typeof data.passage==="string"?data.passage.trim():"",content=typeof data.content==="string"?data.content.trim():"",name=typeof data.name==="string"?data.name.trim()||"익명":"익명";
- if(!passage||passage.length>80||content.length<5||content.length>2000||name.length>30)return Response.json({error:"본문과 5–2,000자의 질문을 입력해주세요. 이름은 30자 이내로 적어주세요."},{status:400});
- const question={id:crypto.randomUUID(),passage,content,name,summary:null,createdAt:Date.now()};try{await questionsDb().prepare("INSERT INTO questions (id, passage, content, name, summary, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(question.id,passage,content,name,null,question.createdAt).run();return Response.json({question},{status:201});}catch(error){console.error("Question save unavailable",error);return Response.json({error:"질문을 저장하지 못했습니다. 작성한 내용은 남아 있으니 다시 시도해주세요."},{status:503});}
+import {env} from 'cloudflare:workers';
+import {questionsApi} from '../../../server/question-service';
+async function handle(request:Request){
+  if(!env.DB)return Response.json({error:'질문 저장 서버를 준비 중입니다.'},{status:503});
+  return questionsApi(request,{...env,DB:env.DB});
 }
+export const GET=handle;
+export const POST=handle;

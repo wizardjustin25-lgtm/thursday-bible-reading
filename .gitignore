@@ -47,3 +47,5 @@ next-env.d.ts
 /.preview-build/
 /site-preview/
 *.tsbuildinfo
+/.cloudflare/
+.dev.vars*

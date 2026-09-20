@@ -1,0 +1,38 @@
+name: Deploy question API
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['server/**', 'drizzle/**', 'scripts/*api.mjs', '.github/workflows/api.yml']
+permissions:
+  contents: read
+concurrency:
+  group: question-api
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || vars.BACKEND_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: production-api
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      RATE_LIMIT_SALT: ${{ secrets.RATE_LIMIT_SALT }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run test:api
+      - run: node scripts/provision-api.mjs
+      - run: npx wrangler d1 migrations apply DB --remote --config .cloudflare/wrangler.json
+      - run: node scripts/deploy-api.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api-endpoint
+          path: .cloudflare/endpoint.json
